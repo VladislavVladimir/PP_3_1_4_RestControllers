@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+          integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+
+    <title>Admin panel</title>
+</head>
+<body>
+<nav class="navbar flex-md-nowrap p-0 shadow navbar-expand-lg sticky-top navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand font-weight-bold" th:text="${username}"></a>
+        <div class="ml-0" th:if="${roles.contains('ROLE_USER')} or ${roles.contains('ROLE_ADMIN')} ">
+            <span class="navbar-brand text-left" th:text="' with roles: ' + (${roles.contains('ROLE_USER')} ? 'USER ':'')  + (${roles.contains('ROLE_ADMIN')} ? 'ADMIN ':'')"></span>
+        </div>
+        <form class="navbar-nav ml-auto" id="myLogout" action="/logout" method="post">
+            <input type="hidden" id="csrf_token" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <a class="nav-link" type="button" onclick="document.getElementById('myLogout').submit();">Logout</a>
+        </form>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
+            <div class="sidebar-sticky pt-3">
+                <ul class="nav flex-column nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active">
+                            Admin <span class="sr-only">(current)</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user}">
+                            User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/index}">
+                            Index
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Tabs or Pills can be used in a card with the help of .nav-{tabs|pills} and .card-header-{tabs|pills} classes -->
+
+        <div class="col-md-10 ml-sm-auto pt-3 px-4 bg-light">
+            <h1 class="text-left mt-12">Admin Panel</h1>
+            <div class="bd-example bd-example-tabs">
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <a class="nav-link active" id="nav-allUsers-tab" data-toggle="tab" href="#nav-allUsers" role="tab"
+                           aria-controls="nav-allUsers" aria-selected="false">Users table</a>
+                        <a class="nav-link" id="nav-newUser-tab" data-toggle="tab" href="#nav-newUser" role="tab"
+                           aria-controls="nav-newUser" aria-selected="false">New User</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade table-bordered" id="nav-newUser" role="tabpanel" aria-labelledby="nav-newUser-tab">
+                        <h3 class="pl-lg-4 tabpanel mt-6" style="margin-top: 10px; margin-bottom: 10px;">Add new user</h3>
+                        <div class="mt-3 bg-white table-bordered">
+                            <div class="col-md-4 offset-md-4">
+                                <form id="newUserForm" class="text-center">
+                                    <br><strong>
+
+                                    <div class="form-group">
+                                        <label for="name">First Name</label>
+                                        <input type="text" class="form-control" id="name" name="name" required placeholder="Enter first name">
+                                        <label id="nameErrorNewUser" hidden class="text-danger"></label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lastName">Last Name</label>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" required placeholder="Enter last name">
+                                        <label id="lastNameErrorNewUser" hidden class="text-danger"></label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="age">Age</label>
+                                        <input type="number" class="form-control" id="age" name="age" required placeholder="Enter age">
+                                        <label id="ageErrorNewUser" hidden class="text-danger"></label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" required placeholder="Enter email">
+                                        <label id="emailErrorNewUser" hidden class="text-danger"></label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="password">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter password">
+                                        <label id="passwordErrorNewUser" hidden class="text-danger"></label>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="user_rolecreate">Role</label>
+                                        <div class="roles-container" id="user_rolecreate">
+                                            <label th:each="role : ${availableRoles}" class="form-control mb-0">
+                                                <input class="form-check-input" type="checkbox" th:id="'idrolecreate'+${role.id}"
+                                                       th:value="${role.name}" th:checked="false" />
+                                                <span th:text="${role.name.substring(5)}"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" id="createUserButton" class="btn btn-success btn-lg">Add New User</button>
+                                    <br><br></strong>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="tab-pane fade table-bordered show active" id="nav-allUsers" role="tabpanel" aria-labelledby="nav-allUsers-tab">
+                        <h3 class="pl-lg-4 tabpanel mt-6" style="margin-top: 10px; margin-bottom: 10px;">All users</h3>
+                        <div class="mt-3 bg-white table-bordered">
+                            <br>
+                            <div class="col-md-12">
+                                <table class="table table-borderless table-striped bg-white">
+                                    <thead class="table-bordered">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Age</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Edit</th>
+                                        <th>Delete</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="userTableBody">
+                                        <!-- меняем реализацию на JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<form class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit user</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center col-md-6 offset-md-3"><strong>
+
+                <div class="form-group">
+                    <label for="modal_id">Id</label>
+                    <input type="text" class="form-control" id="modal_id" required disabled>
+                </div>
+                <div class="form-group">
+                    <label for="modal_first_name">First Name</label>
+                    <input type="text" class="form-control" id="modal_first_name" required placeholder="Enter first name">
+                    <label id="nameErrorUpdateUser" hidden class="text-danger"></label>
+                </div>
+                <div class="form-group">
+                    <label for="modal_last_name">Last Name</label>
+                    <input type="text" class="form-control" id="modal_last_name" required placeholder="Enter last name">
+                    <label id="lastNameErrorUpdateUser" hidden class="text-danger"></label>
+                </div>
+                <div class="form-group">
+                    <label for="modal_age">Age</label>
+                    <input type="number" class="form-control" id="modal_age" required placeholder="Enter age">
+                    <label id="ageErrorUpdateUser" hidden class="text-danger"></label>
+                </div>
+                <div class="form-group">
+                    <label for="modal_email">Email</label>
+                    <input type="email" class="form-control" id="modal_email" required placeholder="Enter email">
+                    <label id="emailErrorUpdateUser" hidden class="text-danger"></label>
+                </div>
+                <div class="form-group" id="passwordFormGroup">
+                    <label for="modal_password">Password</label>
+                    <input type="password" class="form-control" id="modal_password">
+                    <label id="passwordErrorUpdateUser" hidden class="text-danger"></label>
+                </div>
+
+                <div class="form-group">
+                    <label for="user_role">Role</label>
+                    <div class="roles-container" id="user_role" >
+                        <label th:each="role : ${availableRoles}" class="form-control mb-0">
+                            <input class="form-check-input" type="checkbox" th:id="'idrole'+${role.id}" th:value="${role.name}"/>
+                            <span th:text="${role.name.substring(5)}"></span>
+                        </label>
+                    </div>
+                </div>
+
+            </strong></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" id="saveChangesButton">Edit</button>
+                <button type="button" class="btn btn-danger" id="deleteUserButton">Delete</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Optional JavaScript; choose one of the two! -->
+<script>
+    function editUser (id, firstName, lastName, age, email, role) {
+        fillForm(id, firstName, lastName, age, email, role, false); // заполняем форм данными о пользователе
+        $('#exampleModal').modal('show'); // Открываем модальное окно
+    }
+
+    function fillForm(id, firstName, lastName, age, email, role, bool) {
+        const elements = [
+            { id: document.getElementById('modal_first_name'), value: firstName },
+            { id: document.getElementById('modal_last_name'), value: lastName },
+            { id: document.getElementById('modal_age'), value: age },
+            { id: document.getElementById('modal_email'), value: email },
+        ];
+        elements.forEach(element => {
+            element.id.value = element.value;
+            element.id.disabled = bool; // Активируем элемент при редактировании
+        });
+        document.getElementById('modal_id').value = id; // Ид никогда не активируем
+        document.getElementById('modal_password').value = ''; // Очищаем пароль
+        document.getElementById('passwordFormGroup').hidden = bool; // Скрываем при удалении
+
+        for (let i = 1; i <= 2; i++) {
+            const roleElement = document.getElementById(`idrole${i}`);
+            roleElement.checked = role.includes(roleElement.value);
+            roleElement.disabled = bool;
+        }
+        document.getElementById('saveChangesButton').hidden = bool;
+        document.getElementById('deleteUserButton').hidden = !bool;
+        clearErrors('ErrorUpdateUser'); // очищаем от прошлых ошибок
+    }
+
+    function deleteUser (id, firstName, lastName, age, email, role) {
+        fillForm(id, firstName, lastName, age, email, role, true); // заполняем форм данными о пользователе
+        $('#exampleModal').modal('show');
+    }
+</script>
+
+<!-- Option 1: Bootstrap Bundle with Popper -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Option 2: Separate Popper and Bootstrap JS -->
+
+<script>
+    // делаем fetch запрос
+    async function getAllUsers() {
+        try {
+            const response = await fetch('/api/users');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const users = await response.json();
+            populateUserTable(users);
+        } catch (error) {
+            console.error('Ошибка при получении пользователей:', error);
+        }
+    }
+
+    // получение всех пользователей
+    function populateUserTable(users) {
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = '';
+
+        users.forEach(user => {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.name}</td>
+                <td>${user.lastName}</td>
+                <td>${user.age}</td>
+                <td>${user.email}</td>
+                <td>
+                    ${user.roles.map(role => `<label>${role.substring(5)} </label>`).join(' ')}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-success"
+                        data-id="${user.id}"
+                        data-name="${user.name}"
+                        data-lastName="${user.lastName}"
+                        data-age="${user.age}"
+                        data-email="${user.email}"
+                        data-roles="${user.roles.join(',')}"
+                        onclick="editUser(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-lastName'), this.getAttribute('data-age'), this.getAttribute('data-email'), this.getAttribute('data-roles'))">Edit</button>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-danger"
+                        data-id="${user.id}"
+                        data-name="${user.name}"
+                        data-lastName="${user.lastName}"
+                        data-age="${user.age}"
+                        data-email="${user.email}"
+                        data-roles="${user.roles.join(',')}"
+                        onclick="deleteUser(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-lastName'), this.getAttribute('data-age'), this.getAttribute('data-email'), this.getAttribute('data-roles'))">Delete</button>
+                </td>
+            `;
+
+            userTableBody.appendChild(row);
+        });
+    }
+
+    // изменение юзера - update
+    document.getElementById('exampleModal').addEventListener('submit', async function(event) {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+        const csrfToken = document.getElementById('csrf_token').value;
+        const userId = document.getElementById('modal_id').value;
+        const userData = {
+            name: document.getElementById('modal_first_name').value,
+            lastName: document.getElementById('modal_last_name').value,
+            age: document.getElementById('modal_age').value,
+            email: document.getElementById('modal_email').value,
+            password: document.getElementById('modal_password').value,
+            roles: Array.from(document.querySelectorAll('#user_role input[type="checkbox"]:checked')).map(input => input.value)
+        };
+
+        try {
+            const response = await fetch(`/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                throw new Error('Ошибка при обновлении пользователя');
+            } else {
+                if (responseText.startsWith("Success")) {
+                    await getAllUsers(); // Обновляем таблицу пользователей
+                    $('#exampleModal').modal('hide'); // Закрываем модальное окно
+                    //alert('Пользователь успешно обновлен!');
+                } else {
+                    updateErrors('ErrorUpdateUser', responseText); // Обновляем ошибки
+                }
+            }
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Не удалось обновить пользователя. Пожалуйста, попробуйте еще раз.');
+        }
+    });
+
+    // удаление пользователя delete
+    document.getElementById('deleteUserButton').addEventListener('click', async () => {
+        const csrfToken = document.getElementById('csrf_token').value;
+        const userId = document.getElementById('modal_id').value;
+
+        try {
+            const response = await fetch(`/api/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при удалении пользователя');
+            }
+
+            await getAllUsers(); // Обновляем таблицу пользователей
+            $('#exampleModal').modal('hide'); // Закрываем модальное окно
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Не удалось удалить пользователя. Пожалуйста, попробуйте еще раз.');
+        }
+    });
+
+    document.getElementById('newUserForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+        const userData = {
+            name: document.getElementById('name').value,
+            lastName: document.getElementById('lastName').value,
+            age: document.getElementById('age').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            roles: Array.from(document.querySelectorAll('#user_rolecreate input:checked')).map(input => input.value)
+        };
+
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById('csrf_token').value
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                throw new Error('Ошибка при создании пользователя');
+            } else {
+                if (responseText.startsWith("Success")) {
+                    await getAllUsers(); // Обновляем таблицу пользователей
+                    document.getElementById('newUserForm').reset(); // Сбрасываем форму
+                    clearErrors('ErrorNewUser');
+                    //alert('Пользователь успешно создан!');
+                    $('#nav-newUser').removeClass('show active');// переключение вкладки
+                    $('#nav-allUsers').addClass('show active');
+                    $('#nav-newUser-tab').removeClass('active');
+                    $('#nav-allUsers-tab').addClass('active');
+                } else {
+                    updateErrors('ErrorNewUser', responseText); // Обновляем ошибки
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Не удалось создать пользователя. Пожалуйста, попробуйте еще раз.');
+        }
+    });
+
+    function updateErrors(nameElement, errorsText) {
+        clearErrors(nameElement); // Очищаем предыдущие ошибки
+        const errors = errorsText.split(', '); // Разбиваем строку ошибок на массив
+        errors.forEach(error => {
+            const [field, message] = error.split(': '); // Разделяем поле и сообщение
+            const labelElement = document.getElementById(field + nameElement);
+            labelElement.textContent = message; // Устанавливаем сообщение об ошибке
+            labelElement.hidden = false;
+        });
+    }
+
+    function clearErrors(nameElement) {
+        const fields = ['name', 'lastName', 'age', 'email', 'password']; // Список полей для очистки
+        fields.forEach(fieldId => {
+            const label = document.getElementById(fieldId + nameElement);
+            label.textContent = ''; // Очищаем текст ошибки
+            label.hidden = true; // Скрываем элемент ошибки
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', getAllUsers);
+</script>
+<!--
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+-->
+</body>
+</html>
