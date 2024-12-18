@@ -14,10 +14,9 @@
 <body>
 <nav class="navbar flex-md-nowrap p-0 shadow navbar-expand-lg sticky-top navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand font-weight-bold" th:text="${username}"></a>
-        <div class="ml-0" th:if="${roles.contains('ROLE_USER')} or ${roles.contains('ROLE_ADMIN')} ">
-            <span class="navbar-brand text-left" th:text="' with roles: ' + (${roles.contains('ROLE_USER')} ? 'USER ':'')  + (${roles.contains('ROLE_ADMIN')} ? 'ADMIN ':'')"></span>
-        </div>
+        <a class="navbar-brand font-weight-bold m-1" th:text="${#authentication.name}"></a>
+        <a class="ml-0 navbar-brand text-left m-1" >with roles:</a>
+        <div class="ml-0 navbar-brand text-left m-1" th:each="auth : ${#authentication.authorities}" th:text="${auth.authority.substring(5)}"></div>
         <form class="navbar-nav ml-auto" id="myLogout" action="/logout" method="post">
             <input type="hidden" id="csrf_token" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <a class="nav-link" type="button" onclick="document.getElementById('myLogout').submit();">Logout</a>
@@ -99,11 +98,7 @@
                                     <div class="form-group">
                                         <label for="user_rolecreate">Role</label>
                                         <div class="roles-container" id="user_rolecreate">
-                                            <label th:each="role : ${availableRoles}" class="form-control mb-0">
-                                                <input class="form-check-input" type="checkbox" th:id="'idrolecreate'+${role.id}"
-                                                       th:value="${role.name}" th:checked="false" />
-                                                <span th:text="${role.name.substring(5)}"></span>
-                                            </label>
+                                            <!-- меняем реализацию на JavaScript -->
                                         </div>
                                     </div>
 
@@ -193,10 +188,7 @@
                 <div class="form-group">
                     <label for="user_role">Role</label>
                     <div class="roles-container" id="user_role" >
-                        <label th:each="role : ${availableRoles}" class="form-control mb-0">
-                            <input class="form-check-input" type="checkbox" th:id="'idrole'+${role.id}" th:value="${role.name}"/>
-                            <span th:text="${role.name.substring(5)}"></span>
-                        </label>
+                        <!-- меняем реализацию на JavaScript -->
                     </div>
                 </div>
 
@@ -212,7 +204,7 @@
 
 <!-- Optional JavaScript; choose one of the two! -->
 <script>
-    function editUser (id, firstName, lastName, age, email, role) {
+    function editUser(id, firstName, lastName, age, email, role) {
         fillForm(id, firstName, lastName, age, email, role, false); // заполняем форм данными о пользователе
         $('#exampleModal').modal('show'); // Открываем модальное окно
     }
@@ -232,17 +224,18 @@
         document.getElementById('modal_password').value = ''; // Очищаем пароль
         document.getElementById('passwordFormGroup').hidden = bool; // Скрываем при удалении
 
-        for (let i = 1; i <= 2; i++) {
-            const roleElement = document.getElementById(`idrole${i}`);
+        const roleElements = document.querySelectorAll(`#user_role .form-check-input`);
+        roleElements.forEach(roleElement => {
             roleElement.checked = role.includes(roleElement.value);
-            roleElement.disabled = bool;
-        }
+            roleElement.disabled = bool; // Устанавливаем состояние disabled
+        });
+
         document.getElementById('saveChangesButton').hidden = bool;
         document.getElementById('deleteUserButton').hidden = !bool;
         clearErrors('ErrorUpdateUser'); // очищаем от прошлых ошибок
     }
 
-    function deleteUser (id, firstName, lastName, age, email, role) {
+    function deleteUser(id, firstName, lastName, age, email, role) {
         fillForm(id, firstName, lastName, age, email, role, true); // заполняем форм данными о пользователе
         $('#exampleModal').modal('show');
     }
@@ -256,7 +249,53 @@
 <!-- Option 2: Separate Popper and Bootstrap JS -->
 
 <script>
-    // делаем fetch запрос
+    // Функция для загрузки данных при инициализации страницы
+    function loadData() {
+        loadRoles();
+        getAllUsers()
+    }
+
+    // Функция для загрузки ролей
+    function loadRoles() {
+        fetch('/api/roles')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(roles => {
+                const createRolesContainer = document.getElementById('user_rolecreate');
+                const editRolesContainer = document.getElementById('user_role');
+                createRolesContainer.innerHTML = '';
+                editRolesContainer.innerHTML = '';
+                roles.forEach((role) => {
+                    createRoleElements(createRolesContainer, role); //элементы ролей для создания пользователя
+                    createRoleElements(editRolesContainer, role); //элементы ролей для редактирования пользователя
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке ролей:', error);
+            });
+    }
+
+    // Функция для создания и добавления элементов роли
+    function createRoleElements(container, role) {
+        const label = document.createElement('label');
+        label.className = 'form-control mb-0';
+        const input = document.createElement('input');
+        input.className = 'form-check-input';
+        input.type = 'checkbox';
+        input.value = role;
+        const span = document.createElement('span');
+        span.textContent = role.substring(5); // Убираем первые 5 символов
+
+        label.appendChild(input);
+        label.appendChild(span);
+        container.appendChild(label);
+    }
+
+    // делаем fetch запрос на получение всех пользователей
     async function getAllUsers() {
         try {
             const response = await fetch('/api/users');
@@ -270,7 +309,7 @@
         }
     }
 
-    // получение всех пользователей
+    // отображение всех пользователей
     function populateUserTable(users) {
         const userTableBody = document.getElementById('userTableBody');
         userTableBody.innerHTML = '';
@@ -450,7 +489,7 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', getAllUsers);
+    document.addEventListener('DOMContentLoaded', loadData);
 </script>
 <!--
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
